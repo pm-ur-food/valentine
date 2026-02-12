@@ -15,7 +15,6 @@
       --shadow: 0 20px 50px rgba(0,0,0,.18);
     }
     *{box-sizing:border-box}
-
     body{
       margin:0;
       min-height:100vh;
@@ -28,47 +27,36 @@
         linear-gradient(135deg, var(--pink1), var(--pink2), var(--pink3));
     }
 
-    /* Make the background photos POP (less washed out) */
-    .bg-tint{
-      position:fixed; inset:0;
-      background: rgba(255, 120, 190, 0.10);
-      pointer-events:none;
-      z-index:0;
-    }
-
     /* Floating photo layer */
     .float-layer{
-      position:fixed; inset:0;
+      position:fixed;
+      inset:0;
       pointer-events:none;
       z-index:1;
     }
 
     .float-img{
       position:absolute;
-      width:420px;
-      height:420px;
-      border-radius:34px;
-      object-fit:cover;
+      transform: translate(-50%,-50%) rotate(var(--r));
+      width: 420px;
+      height: 420px;
+      border-radius: 34px;
+      object-fit: cover;
 
-      /* clearer + punchier */
-      opacity: 0.92;
-      filter: saturate(1.20) contrast(1.08) brightness(1.02);
+      /* Make them CLEAR + present */
+      opacity: 0.95;
+      filter: saturate(1.25) contrast(1.10) brightness(1.02);
 
       box-shadow: 0 40px 90px rgba(0,0,0,.28);
-      transform: translate(-50%,-50%);
       animation: drift var(--dur) ease-in-out infinite alternate;
 
-      /* helps avoid “ghost” look */
-      background: rgba(255,255,255,.15);
+      /* IMPORTANT: no background -> no “blank box” if fail */
+      background: none;
     }
 
     @keyframes drift{
-      from{
-        transform: translate(-50%,-50%) rotate(var(--r1)) scale(1);
-      }
-      to{
-        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--r2)) scale(1.05);
-      }
+      from{ transform: translate(-50%,-50%) rotate(var(--r)) scale(1); }
+      to  { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--r)) scale(1.05); }
     }
 
     /* Center card */
@@ -86,11 +74,8 @@
       text-align:center;
       padding:44px 26px 34px;
       border-radius:28px;
-
-      /* slightly more solid so text stays readable */
-      background: rgba(255,255,255,.70);
+      background: rgba(255,255,255,.72);
       backdrop-filter: blur(12px);
-
       box-shadow: var(--shadow);
       border: 1px solid rgba(255,255,255,.65);
     }
@@ -157,7 +142,6 @@
       gap:10px;
       box-shadow: 0 16px 30px rgba(255, 59, 138, .30);
     }
-    .yes:hover{ filter: brightness(1.03); }
 
     .no{
       position:absolute;
@@ -178,14 +162,12 @@
       font-size: 15px;
     }
 
-    /* Mobile: slightly smaller photos so they still fit nicely */
     @media (max-width: 700px){
       .float-img{ width:300px; height:300px; border-radius:26px; }
     }
   </style>
 </head>
 <body>
-  <div class="bg-tint" aria-hidden="true"></div>
   <div class="float-layer" id="floatLayer" aria-hidden="true"></div>
 
   <main class="wrap">
@@ -205,60 +187,61 @@
   </main>
 
   <script>
-    // We will load EXACTLY 6 photos.
-    // This loader tries .jpg first, then .JPG if it fails (fixes empty boxes from case mismatch).
-    const photoIds = [1,2,3,4,5,6];
-
     const layer = document.getElementById("floatLayer");
 
     function rand(min, max){ return Math.random()*(max-min)+min; }
 
-    // Fixed “nice” positions so they’re always visible + spread out
+    // Fixed positions so all 6 are clearly visible
     const positions = [
-      { left: 12, top: 22, rot1: -10, rot2: 12 },
-      { left: 30, top: 70, rot1: 8,  rot2: -14 },
-      { left: 72, top: 18, rot1: 12, rot2: -10 },
-      { left: 86, top: 58, rot1: -8, rot2: 10 },
-      { left: 55, top: 86, rot1: 10, rot2: -12 },
-      { left: 48, top: 38, rot1: -12, rot2: 14 }
+      { left: 10, top: 24, r: -8 },
+      { left: 18, top: 78, r: 10 },
+      { left: 78, top: 18, r: 10 },
+      { left: 90, top: 62, r: -10 },
+      { left: 58, top: 90, r: 8 },
+      { left: 48, top: 40, r: -12 }
     ];
 
-    function createFloatingPhoto(src, i){
+    // IMPORTANT: use ./photos so GitHub Pages under /valentine/ always works
+    const srcs = [
+      "./photos/1.jpg",
+      "./photos/2.jpg",
+      "./photos/3.jpg",
+      "./photos/4.jpg",
+      "./photos/5.jpg",
+      "./photos/6.jpg"
+    ];
+
+    function addPhoto(src, i){
       const img = document.createElement("img");
       img.className = "float-img";
+      img.loading = "eager";
+
+      // Fallback for case issues (.JPG)
+      img.onerror = () => {
+        if (!src.endsWith(".JPG")) img.src = src.replace(".jpg", ".JPG");
+      };
+
       img.src = src;
 
-      const p = positions[i % positions.length];
-
+      const p = positions[i];
       img.style.left = p.left + "%";
       img.style.top  = p.top  + "%";
-
+      img.style.setProperty("--r", p.r + "deg");
       img.style.setProperty("--dx", rand(-120, 120) + "px");
       img.style.setProperty("--dy", rand(-100, 100) + "px");
-      img.style.setProperty("--dur", rand(7.0, 12.0) + "s");
-      img.style.setProperty("--r1", p.rot1 + "deg");
-      img.style.setProperty("--r2", p.rot2 + "deg");
+      img.style.setProperty("--dur", rand(7.5, 12.5) + "s");
 
-      // Randomize size a bit (still BIG)
-      const size = rand(320, 480);
+      // big sizes
+      const size = rand(360, 520);
       img.style.width  = size + "px";
       img.style.height = size + "px";
 
       layer.appendChild(img);
     }
 
-    // Try loading each photo with fallback case (.jpg -> .JPG)
-    function loadWithFallback(n, i){
-      const jpg = `photos/${n}.jpg`;
-      const JPG = `photos/${n}.JPG`;
-
-      const test = new Image();
-      test.onload = () => createFloatingPhoto(jpg, i);
-      test.onerror = () => createFloatingPhoto(JPG, i);
-      test.src = jpg;
+    for(let i=0; i<6; i++){
+      addPhoto(srcs[i], i);
     }
-
-    photoIds.forEach((n, i) => loadWithFallback(n, i));
 
     // “No” button dodges the cursor/tap
     const noBtn = document.getElementById("noBtn");
