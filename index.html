@@ -27,29 +27,35 @@
         linear-gradient(135deg, var(--pink1), var(--pink2), var(--pink3));
     }
 
-    /* floating photo layer */
+    /* Floating photo layer (bigger + more visible) */
     .float-layer{
       position:fixed; inset:0;
       pointer-events:none;
-      opacity:.35;
-      filter: saturate(1.05);
+      opacity:.65;             /* more visible */
+      filter: saturate(1.08);
+      z-index:0;
     }
     .float-img{
       position:absolute;
-      width:140px;
-      height:140px;
-      border-radius:22px;
+      width:300px;            /* default; randomized in JS */
+      height:300px;
+      border-radius:30px;
       object-fit:cover;
-      box-shadow: 0 14px 34px rgba(0,0,0,.18);
+      box-shadow: 0 30px 70px rgba(0,0,0,.28);
       transform: translate(-50%,-50%);
       animation: drift var(--dur) ease-in-out infinite alternate;
+      opacity:.75;            /* more visible */
     }
     @keyframes drift{
-      from{ transform: translate(-50%,-50%) rotate(var(--r1)) scale(1); }
-      to  { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--r2)) scale(1.03); }
+      from{
+        transform: translate(-50%,-50%) rotate(var(--r1)) scale(1);
+      }
+      to{
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--r2)) scale(1.08);
+      }
     }
 
-    /* center card */
+    /* Center card */
     .wrap{
       position:relative;
       min-height:100vh;
@@ -63,7 +69,7 @@
       text-align:center;
       padding:44px 26px 34px;
       border-radius:28px;
-      background: rgba(255,255,255,.58);
+      background: rgba(255,255,255,.60);
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
       border: 1px solid rgba(255,255,255,.55);
@@ -76,7 +82,7 @@
     h1{
       margin:0;
       font-size: clamp(20px, 3vw, 30px);
-      font-weight:700;
+      font-weight:800;
       letter-spacing:.2px;
     }
     .big-question{
@@ -90,12 +96,7 @@
       font-size: clamp(28px, 4.6vw, 56px);
       font-family: ui-rounded, "Segoe UI", system-ui;
       color:#ff2c84;
-      font-weight:800;
-    }
-    .sub{
-      margin: 8px 0 18px;
-      font-size: 16px;
-      opacity:.85;
+      font-weight:900;
     }
 
     .btn-row{
@@ -104,7 +105,7 @@
       justify-content:center;
       gap:18px;
       align-items:center;
-      min-height:96px;
+      min-height:110px; /* a bit bigger so No can move around */
       margin-top:12px;
     }
     a, button{ font:inherit; }
@@ -113,14 +114,14 @@
       cursor:pointer;
       padding:16px 28px;
       border-radius:999px;
-      font-weight:800;
+      font-weight:900;
       font-size:18px;
       transition: transform .12s ease, filter .12s ease;
-      box-shadow: 0 14px 26px rgba(255, 59, 138, .28);
       user-select:none;
       -webkit-tap-highlight-color: transparent;
     }
     .btn:active{ transform: scale(.98); }
+
     .yes{
       background: linear-gradient(135deg, var(--btn), var(--btn2));
       color:white;
@@ -129,6 +130,7 @@
       align-items:center;
       justify-content:center;
       gap:10px;
+      box-shadow: 0 16px 30px rgba(255, 59, 138, .30);
     }
     .yes:hover{ filter: brightness(1.03); }
 
@@ -136,24 +138,25 @@
     .no{
       position:absolute;
       left: 18%;
-      top: 14px;
-      background: rgba(80,95,110,.45);
+      top: 16px;
+      background: rgba(80,95,110,.55);
       color:white;
-      box-shadow: 0 12px 22px rgba(0,0,0,.12);
+      box-shadow: 0 14px 24px rgba(0,0,0,.14);
       padding:14px 26px;
-      font-weight:800;
+      font-weight:900;
       border: 1px solid rgba(255,255,255,.35);
     }
 
     .tiny{
       margin-top: 16px;
       font-style: italic;
-      opacity:.8;
+      opacity:.85;
       font-size: 15px;
     }
 
     @media (max-width:520px){
       .no{ left: 8%; }
+      .float-img{ border-radius:24px; }
     }
   </style>
 </head>
@@ -177,8 +180,9 @@
   </main>
 
   <script>
-    // 1) Floating photos (replace with YOUR images in /photos/)
-    // Add as many as you want (just make sure the files exist)
+    // ✅ IMPORTANT:
+    // Make sure these exact files exist in your repo:
+    // photos/1.jpg ... photos/6.jpg (or add more and include them here)
     const photos = [
       "photos/1.jpg",
       "photos/2.jpg",
@@ -192,25 +196,38 @@
 
     function rand(min, max){ return Math.random()*(max-min)+min; }
 
-    // Create floating image elements
-    const count = Math.min(photos.length, 14); // up to 14 floating photos
+    // BIGGER + MORE photos:
+    // We'll create 24 floating images using your 6 photos (repeated in different positions/sizes)
+    const count = 24;
+
     for(let i=0; i<count; i++){
       const img = document.createElement("img");
       img.className = "float-img";
       img.src = photos[i % photos.length];
-      img.style.left = rand(8, 92) + "%";
-      img.style.top  = rand(6, 94) + "%";
-      img.style.setProperty("--dx", rand(-40, 40) + "px");
-      img.style.setProperty("--dy", rand(-35, 35) + "px");
-      img.style.setProperty("--dur", rand(4.5, 9.5) + "s");
-      img.style.setProperty("--r1", rand(-10, 10) + "deg");
-      img.style.setProperty("--r2", rand(-18, 18) + "deg");
-      img.style.width  = rand(95, 165) + "px";
-      img.style.height = img.style.width;
+
+      // Spread across the screen
+      img.style.left = rand(5, 95) + "%";
+      img.style.top  = rand(5, 95) + "%";
+
+      // More movement
+      img.style.setProperty("--dx", rand(-140, 140) + "px");
+      img.style.setProperty("--dy", rand(-110, 110) + "px");
+      img.style.setProperty("--dur", rand(5.5, 11.5) + "s");
+      img.style.setProperty("--r1", rand(-12, 12) + "deg");
+      img.style.setProperty("--r2", rand(-22, 22) + "deg");
+
+      // BIG sizes
+      const size = rand(240, 380);
+      img.style.width  = size + "px";
+      img.style.height = size + "px";
+
+      // Slightly vary opacity so it looks layered
+      img.style.opacity = rand(0.55, 0.82);
+
       layer.appendChild(img);
     }
 
-    // 2) “No” button dodges the cursor/tap
+    // “No” button dodges the cursor/tap
     const noBtn = document.getElementById("noBtn");
     const row = document.getElementById("btnRow");
 
@@ -218,7 +235,6 @@
       const rowRect = row.getBoundingClientRect();
       const btnRect = noBtn.getBoundingClientRect();
 
-      // Keep the button within the row bounds
       const padding = 10;
       const maxX = rowRect.width - btnRect.width - padding;
       const maxY = rowRect.height - btnRect.height - padding;
@@ -230,17 +246,15 @@
       noBtn.style.top  = y + "px";
     }
 
-    // Move when mouse gets close
     document.addEventListener("mousemove", (e) => {
       const b = noBtn.getBoundingClientRect();
       const cx = b.left + b.width/2;
       const cy = b.top + b.height/2;
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
 
-      if(dist < 130) moveNoButton();
+      if(dist < 150) moveNoButton();
     });
 
-    // Also dodge on hover/focus/touch attempts
     noBtn.addEventListener("mouseenter", moveNoButton);
     noBtn.addEventListener("focus", moveNoButton);
     noBtn.addEventListener("touchstart", (e) => {
@@ -248,7 +262,6 @@
       moveNoButton();
     }, {passive:false});
 
-    // Start at a playful random position (after layout)
     requestAnimationFrame(() => moveNoButton());
   </script>
 </body>
